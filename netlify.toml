@@ -1,0 +1,26 @@
+[build]
+  publish = "public"
+
+# Root path: allow DoH at base URL
+[[edge_functions]]
+path = "/"
+function = "dns"
+
+# DoH binary endpoint keeps working
+[[edge_functions]]
+path = "/dns-query"
+function = "dns"
+
+# JSON DoH
+[[edge_functions]]
+path = "/resolve"
+function = "dns"
+
+# Utilities
+[[edge_functions]]
+path = "/ip"
+function = "dns"
+
+[[edge_functions]]
+path = "/ip-info"
+function = "dns"
