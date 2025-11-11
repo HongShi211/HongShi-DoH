@@ -56,23 +56,23 @@ HongShi-DoH-all-in-one/
    ```toml
    [build]
      publish = "public"
-
+   
    [[edge_functions]]
    path = "/"
    function = "dns"
-
+   
    [[edge_functions]]
    path = "/dns-query"
    function = "dns"
-
+   
    [[edge_functions]]
    path = "/resolve"
    function = "dns"
-
+   
    [[edge_functions]]
    path = "/ip"
    function = "dns"
-
+   
    [[edge_functions]]
    path = "/ip-info"
    function = "dns"
@@ -116,5 +116,3 @@ HongShi-DoH-all-in-one/
 - 为 Cloudflare JSON DoH 适配 `/dns-query?ct=application/dns-json`，避免 404。
 - `/resolve` 增加错误捕获与 502 JSON 返回，便于前端展示错误。
 - UI 焕新：暖色渐变 + 玻璃化卡片，加入「Get JSON」与「清除」。
-
-MIT © HongShi
