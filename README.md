@@ -42,7 +42,7 @@ HongShi-DoH-all-in-one/
 | 变量名 | 说明 | 默认值 | 例子 |
 |---|---|---|---|
 | `DOH` | 上游 DoH 主机或 URL（会自动取 host） | `cloudflare-dns.com` | `dns.google` / `https://dns.quad9.net/dns-query` |
-| `PATH` | 自定义二进制 DoH 路径 | `dns-query` | `PATH=mydns` → `/mydns` 可用 |
+| `PATH` | 自定义二进制 DoH 路径，注意，添加本变量可能导致netlify与vercel部署失败，如有需求，请添加TOKEN | `dns-query` | `PATH=mydns` → `/mydns` 可用 |
 | `TOKEN` | 与 PATH 等价（兼容旧用法） | — | `TOKEN=mysecret` |
 
 > Netlify 在 **Site settings → Environment variables** 设置；  
