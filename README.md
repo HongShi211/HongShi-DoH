@@ -1,4 +1,4 @@
-# 🌐 Netlify Edge DoH Proxy (with UI & Root DNS)
+# 🌐 HongShi Netlify Edge DoH Proxy (with UI & Root DNS)
 
 一个可直接部署在 **Netlify Edge Functions** 上的高性能 DNS-over-HTTPS (DoH) 代理。  
 支持 Cloudflare / Google / Quad9 等上游 DNS，内置一个优雅的 `/ui` 网页，可直接输入域名进行解析查询。
@@ -32,10 +32,12 @@ netlify-doh/
 ├─ netlify.toml
 ├─ public/
 │  ├─ index.html       # 简介
-│  └─ ui.html          # DNS 查询 UI
+│  └─ ui
+│  │   └─ index.html     # DNS 查询 UI
+│  └─  favicon.png
 └─ netlify/
-└─ edge-functions/
-└─ dns.ts        # 核心逻辑
+     └─ edge-functions/
+          └─ dns.ts        # 核心逻辑
 
 
 
