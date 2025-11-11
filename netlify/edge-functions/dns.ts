@@ -41,12 +41,29 @@ async function fetchJson(url) {
 
 async function queryDns(dohUrl, domain, type) {
   const u = new URL(dohUrl);
-  if (u.pathname.endsWith('/dns-query')) u.pathname = '/resolve';
+  // Host-based strategy:
+  // - Google: JSON at /resolve
+  // - Cloudflare/Quad9/etc.: JSON at /dns-query with ?ct=application/dns-json or Accept header
+  const host = u.hostname.toLowerCase();
+  const preferResolve = host.includes('dns.google');
+  if (preferResolve) {
+    u.pathname = '/resolve';
+  } else {
+    // default to /dns-query JSON
+    if (!u.pathname || u.pathname === '/' || !u.pathname.endsWith('/dns-query')) {
+      u.pathname = '/dns-query';
+    }
+    u.searchParams.set('ct', 'application/dns-json');
+  }
   u.searchParams.set('name', domain);
   u.searchParams.set('type', type);
-  const out = await fetchJson(u.toString());
-  if (!out.ok) throw new Error(`upstream ${u.host} ${out.status} ${out.statusText} :: ${out.text?.slice(0,200)}`);
-  return out.json;
+
+  const r = await fetch(u.toString(), {
+    headers: { 'Accept': 'application/dns-json', 'User-Agent': 'HongShi-DoH/edge' }
+  });
+  const text = await r.text();
+  if (!r.ok) throw new Error(`upstream ${u.host} ${r.status} ${r.statusText} :: ${text.slice(0,200)}`);
+  try { return JSON.parse(text); } catch { return { raw: text }; }
 }
 
 async function handleLocalDoh(domain, type, env) {
