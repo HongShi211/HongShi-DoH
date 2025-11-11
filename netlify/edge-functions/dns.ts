@@ -1,4 +1,4 @@
-// HongShi-DoH Netlify Edge function (token => disable /dns-query)
+// HongShi-DoH Netlify Edge function
 const DEFAULT_DOH = 'cloudflare-dns.com';
 
 function getEnv() {
@@ -52,12 +52,18 @@ async function handleDoHBinary(request,env){
 }
 export default async (request)=>{
   const env=getEnv(); const url=new URL(request.url); const pathname=url.pathname;
+  // Root smart split
+  if (pathname === '/') {
+    const hasDoHParam = url.searchParams.has('dns') || url.searchParams.has('name') || request.method === 'POST';
+    if (!hasDoHParam) return Response.redirect(url.origin + '/ui/', 302);
+    return handleDoHBinary(request, env);
+  }
   const tokenPath=`/${env.HSD_PATH}`; const tokenEnabled=!!env.HSD_PATH && env.HSD_PATH!=='dns-query';
   if(tokenEnabled && pathname===tokenPath) return handleDoHBinary(request,env);
   if(tokenEnabled && pathname==='/dns-query') return new Response('Not Found',{status:404,headers:cors(new Headers({'content-type':'text/plain; charset=utf-8'}))});
-  if(pathname==='/'&&(url.searchParams.has('dns')||url.searchParams.has('name')||request.method==='POST'||request.method==='OPTIONS')) return handleDoHBinary(request,env);
   if(pathname==='/resolve') return handleResolve(request,env);
-  if(pathname==='/ip'){ const ip=request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||request.headers.get('x-real-ip')||request.headers.get('cf-connecting-ip')||'0.0.0.0'; return new Response(ip+'\n',{headers:cors(new Headers({'content-type':'text/plain; charset=utf-8'}))}); }
+  if(pathname==='/ip'){ const ip=request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||request.headers.get('x-real-ip')||request.headers.get('cf-connecting-ip')||'0.0.0.0'; return new Response(ip+'\\n',{headers:cors(new Headers({'content-type':'text/plain; charset=utf-8'}))}); }
   if(pathname==='/ip-info'){ const r=await fetch('https://1.1.1.1/cdn-cgi/trace'); const txt=await r.text(); return new Response(txt,{headers:cors(new Headers({'content-type':'text/plain; charset=utf-8'}))}); }
+  if(pathname==='/host'){ let hostname='unknown'; try { hostname = (Deno as any).hostname?.() || hostname; } catch {} return new Response(JSON.stringify({hostname},null,2),{headers:cors(new Headers({'content-type':'application/json'}))}); }
   return fetch(request);
 }

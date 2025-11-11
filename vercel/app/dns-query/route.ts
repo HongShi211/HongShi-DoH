@@ -1,11 +1,18 @@
 export const runtime = 'edge';
 const token = process.env.HSD_PATH || process.env.TOKEN;
 async function doh(req: Request): Promise<Response> {
-  const DEFAULT_DOH='cloudflare-dns.com'; const dohHost=(process.env.DOH||DEFAULT_DOH).replace(/^https?:\/\//,'').split('/')[0]; const dnsDoH=`https://${dohHost}/dns-query`; const url=new URL(req.url);
+  const DEFAULT_DOH='cloudflare-dns.com';
+  const dohHost=(process.env.DOH||DEFAULT_DOH).replace(/^https?:\/\//,'').split('/')[0];
+  const dnsDoH=`https://${dohHost}/dns-query`;
+  const url=new URL(req.url);
   if(req.method==='OPTIONS') return new Response(null,{status:204,headers:new Headers({'access-control-allow-origin':'*','access-control-allow-methods':'GET, POST, OPTIONS','access-control-allow-headers':'*'})});
-  const isGetDns=url.searchParams.has('dns'); const isPost=req.method==='POST' && (req.headers.get('content-type')||'').startsWith('application/dns-message'); if(!isGetDns && !isPost) return new Response('Bad Request',{status:400});
-  const upstream=isGetDns?dnsDoH+url.search:dnsDoH; const init:RequestInit=isGetDns?{headers:{'accept':'application/dns-message','user-agent':'HongShi-DoH/edge'}}:{method:'POST',headers:{'accept':'application/dns-message','content-type':'application/dns-message','user-agent':'HongShi-DoH/edge'},body:await (req as any).arrayBuffer()};
-  const r=await fetch(upstream,init); return new Response(r.body,{status:r.status,headers:{'access-control-allow-origin':'*','content-type':'application/dns-message'}});
+  const isGetDns=url.searchParams.has('dns');
+  const isPost=req.method==='POST' && (req.headers.get('content-type')||'').startsWith('application/dns-message');
+  if(!isGetDns && !isPost) return new Response('Bad Request',{status:400});
+  const upstream=isGetDns?dnsDoH+url.search:dnsDoH;
+  const init:RequestInit=isGetDns?{headers:{'accept':'application/dns-message','user-agent':'HongShi-DoH/edge'}}:{method:'POST',headers:{'accept':'application/dns-message','content-type':'application/dns-message','user-agent':'HongShi-DoH/edge'},body:await (req as any).arrayBuffer()};
+  const r=await fetch(upstream,init);
+  return new Response(r.body,{status:r.status,headers:{'access-control-allow-origin':'*','content-type':'application/dns-message'}});
 }
 export async function GET(req: Request){ if(token && token!=='dns-query') return new Response('Not Found',{status:404}); return doh(req); }
 export async function POST(req: Request){ if(token && token!=='dns-query') return new Response('Not Found',{status:404}); return doh(req); }
