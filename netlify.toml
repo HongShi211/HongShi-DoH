@@ -4,4 +4,4 @@ publish="public"
 [[edge_functions]]
 path="/*"
 function="dns"
-excludedPath=["/ui/*","/favicon.png","/robots.txt","/sitemap.xml","/assets/*"]
+excludedPath=["/ui/*","/favicon.png"]

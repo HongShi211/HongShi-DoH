@@ -1,1 +1,33 @@
-<!doctype html><meta charset='utf-8'><title>HongShi-DoH</title><p>主页可用。前往 <a href='/ui/'>UI</a></p>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HongShi-DoH 首页</title>
+<link rel="icon" href="/favicon.png">
+<style>
+body{margin:0;font-family:ui-sans-serif,system-ui;background:linear-gradient(135deg,#ff8a00,#ff5e62);height:100vh;display:flex;align-items:center;justify-content:center;color:#222}
+.card{background:rgba(255,255,255,.92);backdrop-filter:blur(10px);padding:40px 60px;border-radius:24px;box-shadow:0 20px 80px rgba(0,0,0,.15);text-align:center;max-width:600px}
+h1{font-size:40px;margin:0 0 8px}
+p{margin:0 0 20px;color:#555}
+.btns{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:20px}
+a.btn{padding:12px 20px;border-radius:14px;text-decoration:none;font-weight:600}
+.btn-main{background:#ff6a3d;color:#fff}
+.btn-sub{background:#fff;color:#ff6a3d;border:1px solid #ffd4c2}
+img{width:80px;height:80px;border-radius:20px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="card">
+<img src="/favicon.png" alt="logo">
+<h1>HongShi-DoH</h1>
+<p>高性能 DNS over HTTPS 服务<br>支持 Netlify / Vercel 部署，集成 UI 与 IP 定位</p>
+<div class="btns">
+<a href="/ui/" class="btn btn-main">🌐 查询 UI</a>
+<a href="/resolve?name=example.com&type=A" class="btn btn-sub">🔍 JSON 解析</a>
+<a href="/ip" class="btn btn-sub">📡 IP 信息</a>
+<a href="/host" class="btn btn-sub">💻 主机信息</a>
+</div>
+</div>
+</body>
+</html>

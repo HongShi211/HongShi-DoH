@@ -1,255 +1,146 @@
-# 🌐 HongShi-DoH (Token-aware, Netlify + Vercel)
+# 🌐 HongShi-DoH-Pro
 
-> 🔒 支持可配置 TOKEN：设置后自动启用 `/<token>` DoH 端点，同时禁用 `/dns-query`。
->  💡 一份代码，兼容 Netlify 与 Vercel — 开箱即用，无需手动修改路径映射。
+一个支持 **DNS-over-HTTPS（DoH）**、**本地 IP 定位服务** 与 **自定义路径 / UI 界面** 的完整项目，  
+可一键部署在 **Netlify** 或 **Vercel**，并附带 Python 高精度 IP 查询接口（FastAPI）。
 
-------
+---
 
-## 🚀 特性概览
+## 🚀 功能概览
 
-- ✅ 支持 **DNS-over-HTTPS 二进制接口**
-- ✅ 支持 **JSON 格式 DNS 查询 (`/resolve`)**
-- ✅ 内置美观可视化界面 `/ui`
-- ✅ 支持自定义上游 DoH（如 Cloudflare / Google）
-- ✅ 支持自定义端点 `/<token>`
-- 🚫 当设置 Token 后自动禁用 `/dns-query`
-- ✅ 可直接部署于：
-  - [Netlify Edge Functions](https://docs.netlify.com/edge-functions/overview/)
-  - [Vercel Edge Runtime (Next.js 14)](https://vercel.com/docs/functions/edge-functions)
+| 模块 | 描述 |
+|------|------|
+| `/dns-query` | 标准 DoH 接口，支持 GET / POST / application/dns-message |
+| `/resolve` | JSON 模式 DNS 查询（聚合 A / AAAA / NS） |
+| `/ui/` | 可视化前端界面，支持输入域名、选择 DoH、显示 JSON 与表格 |
+| `/ip` | 返回请求方 IP、归属地、ASN、运营商、经纬度等信息 |
+| `/host` | 显示部署平台主机名与实例信息 |
+| `/meta` | 返回当前 DOH_PATH、DNS Query 启用状态 |
+| `/` | 首页介绍，自动检测 /meta |
 
-------
+---
 
-## ⚙️ 环境变量
+## 🏗️ 环境变量
 
-| 变量名     | 用途                            | 默认值               | 示例                           |
-| ---------- | ------------------------------- | -------------------- | ------------------------------ |
-| `HSD_PATH` | 自定义 DoH 端点路径（推荐使用） | `dns-query`          | `mydns`                        |
-| `TOKEN`    | 与 `HSD_PATH` 等价，用作兼容    | —                    | `secure123`                    |
-| `DOH`      | 上游 DoH 服务地址（或主机名）   | `cloudflare-dns.com` | `https://dns.google/dns-query` |
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `DOH_PATH` | `dns-query` | 自定义 DoH 路径。设定后将禁用默认 `/dns-query` |
+| `DOH` | `cloudflare-dns.com` | 上游 DoH 服务（可为 dns.google 等） |
+| `IP_ENRICH` | `auto` | `local` / `ipwhois` / `ipapi` / `ipinfo` 自动优先使用本地数据库 |
+| `IPINFO_TOKEN` | *(可选)* | 当 `IP_ENRICH=ipinfo` 时使用 |
+| `TOKEN` / `HSD_PATH` | *(可选)* | 替代路径参数（历史兼容） |
 
-> ⚠️ **不要使用 `PATH` 环境变量** —— 它是系统路径，设置会破坏构建。
+---
 
-------
+## 💡 Netlify 部署
 
-## 🧱 路径行为逻辑
+1. Fork 或上传仓库。
+2. 根目录包含 `netlify.toml` 与 `netlify/edge-functions/`。
+3. 部署时自动识别 Edge Function。
+4. 可选上传 `.mmdb` 数据库至 `/python/` 目录（用于 Python 版 IP 查询）。
 
-| 路径         | 功能                                                | 是否可禁用                                          |
-| ------------ | --------------------------------------------------- | --------------------------------------------------- |
-| `/`          | 根路径 DoH（GET `?dns=` / POST 二进制），或 UI 跳转 | 否                                                  |
-| `/dns-query` | 默认二进制 DoH 端点                                 | ✅ 当设置 `HSD_PATH/TOKEN` 且值 ≠ `dns-query` 时禁用 |
-| `/<token>`   | 自定义 DoH 端点（同 `/dns-query` 功能）             | ✅ 当设置 `HSD_PATH/TOKEN` 时启用                    |
-| `/resolve`   | JSON 格式查询                                       | 否                                                  |
-| `/ip`        | 返回请求来源 IP                                     | 否                                                  |
-| `/ip-info`   | Cloudflare Trace 信息                               | 否                                                  |
-| `/ui`        | 可视化界面（纯前端）                                | 否                                                  |
+---
 
-------
+## 💡 Vercel 部署
 
-## 🌍 Netlify 部署指南
+1. 将 `/vercel` 目录作为根目录上传。
+2. 可设置 `DOH_PATH` 环境变量自定义路径。
+3. 自动路由 `/resolve`、`/dns-query`、`/[token]`、`/ip`、`/host`。
 
-### 1️⃣ 文件结构
+---
 
-```
-netlify.toml
-netlify/
-  └─ edge-functions/
-       └─ dns.ts
-public/
-  ├─ index.html
-  ├─ favicon.png
-  └─ ui/
-       └─ index.html
-```
+## 🧠 Python IP 定位服务
 
-### 2️⃣ 配置说明
+路径：`/python/ip_query.py`
 
-**`netlify.toml`**（已内置在仓库中）：
-
-```toml
-[build]
-  publish = "public"
-
-[[edge_functions]]
-path = "/*"
-function = "dns"
-```
-
-### 3️⃣ 环境变量设置
-
-在 Netlify 控制台 → “Site Settings → Environment Variables”：
+### 🔧 依赖安装
 
 ```bash
-HSD_PATH=mydns
-DOH=dns.google
-```
+cd python
+pip install -r requirements.txt
+~~~
 
-部署后：
+### 📦 依赖列表
 
-- `/mydns` 可作为 DoH 端点
-- `/dns-query` 将返回 404（自动禁用）
-- `/ui` 打开界面
-- `/resolve?name=example.com&type=A` 返回 JSON
+- `fastapi`
+- `uvicorn`
+- `maxminddb`
 
-------
-
-## ⚡️ Vercel 部署指南
-
-### 1️⃣ 项目结构
-
-```
-vercel/
- ├─ app/
- │   ├─ route.ts
- │   ├─ resolve/route.ts
- │   ├─ dns-query/route.ts
- │   ├─ [token]/route.ts
- │   └─ ui/page.tsx
- ├─ public/
- │   └─ favicon.png
- ├─ next.config.js
- └─ package.json
-```
-
-### 2️⃣ 环境变量
-
-在 Vercel 项目 → “Settings → Environment Variables”：
-
-```
-HSD_PATH=mydns
-DOH=https://dns.google/dns-query
-```
-
-### 3️⃣ 访问路径行为
-
-| 路径         | 说明                              |
-| ------------ | --------------------------------- |
-| `/dns-query` | 默认端点，若设置 token 则返回 404 |
-| `/mydns`     | 有效端点（仅当 token=`mydns`）    |
-| `/resolve`   | JSON 查询                         |
-| `/ui`        | 图形界面                          |
-| `/`          | 根路径可处理 DoH 或重定向 UI      |
-
-------
-
-## 💡 运行本地测试（Vercel）
+### 📍 启动服务
 
 ```bash
-cd vercel
-npm install
-npm run dev
+python ip_query.py
 ```
 
-访问：
+默认端口：`8080`
 
-- http://localhost:3000/ui
-- http://localhost:3000/resolve?name=example.com&type=A
+支持：
+
+- `/`：自动返回请求 IP 定位结果
+- `/{ip}`：手动查询任意 IP
+- 自动记录日志至 `ip_query.log`
+
+### 📁 数据库文件
+
+| 文件                 | 说明                             |
+| -------------------- | -------------------------------- |
+| `GeoLite2-City.mmdb` | 城市级定位数据库                 |
+| `GeoLite2-ASN.mmdb`  | 自治系统 ASN 信息                |
+| `GeoCN.mmdb`         | 中国区精细化数据库（需自行放置） |
 
 ------
 
-## 🧩 Token 逻辑图
+## ✨ UI 界面预览
 
-```text
-+-------------------+
-| 环境变量 HSD_PATH |
-+---------+---------+
-          |
-          v
-    如果为空或=dns-query
-         /dns-query 正常使用
-          |
-          +--> /<token> 不存在
+UI 页面位于 `/ui/`
 
-    否则（设置为 mydns 等）
-         /mydns 可用
-         /dns-query 自动返回 404
-```
+- 支持选择 DoH 服务器（本地 / Cloudflare / Google / 自定义）
+- 实时展示解析结果
+- 美观的玻璃拟态风格、暗亮自适应、可复制 JSON / 端点
+- 可检测 `/resolve` 连通性
 
 ------
 
-## 🧰 示例
-
-### 1️⃣ 默认（无 Token）
+## 🧩 目录结构
 
 ```
-GET https://example.netlify.app/dns-query?dns=<base64>
-GET https://example.netlify.app/resolve?name=example.com&type=A
-```
-
-### 2️⃣ 启用 Token = `mydns`
-
-```
-GET https://example.netlify.app/mydns?dns=<base64>     ✅ 可用
-GET https://example.netlify.app/dns-query?dns=<base64> ❌ 404
+HongShi-DoH-Pro/
+├── netlify/            # Netlify Edge Function 逻辑
+├── vercel/             # Vercel Edge Function 逻辑
+├── public/ui/          # Web UI 界面
+├── python/             # Python IP 查询服务
+└── README.md
 ```
 
 ------
 
-## 🧪 上游兼容性
+## ⚙️ 示例输出 `/ip`
 
-| 上游       | JSON API                             | 说明               |
-| ---------- | ------------------------------------ | ------------------ |
-| Cloudflare | `/dns-query?ct=application/dns-json` | 默认模式           |
-| Google     | `/resolve`                           | 自动切换           |
-| 其他       | `/dns-query`                         | 自动附带 Accept 头 |
-
-------
-
-## 🎨 UI 使用说明
-
-UI 地址：`/ui`
-
-- 下拉可选择：
-  - 当前站点 `/dns-query`（或自定义 Token 端点）
-  - Cloudflare / Google
-  - 自定义 URL
-- 输入域名 + 记录类型，点击「解析」
-- 可查看 JSON 或简表格式结果
-
-> 如果你使用了 Token 并禁用了 `/dns-query`，请将 UI 的默认路径改为：
-
-```js
-return location.origin + '/<你的token>'
+```json
+{
+  "ip": "1.1.1.1",
+  "addr": "1.1.1.0/24",
+  "as": {
+    "number": 13335,
+    "name": "Cloudflare",
+    "info": "Cloudflare"
+  },
+  "country": {
+    "code": "AU",
+    "name": "澳大利亚"
+  },
+  "registered_country": {
+    "code": "US",
+    "name": "美国"
+  },
+  "regions": ["新南威尔士州", "悉尼"],
+  "location": {
+    "latitude": -33.86,
+    "longitude": 151.21
+  },
+  "type": "IDC",
+  "source": {
+    "provider": "mmdb",
+    "enriched": true
+  }
+}
 ```
-
-------
-
-## 📦 目录摘要
-
-```
-HongShi-DoH/
-├─ README.md
-├─ netlify.toml
-├─ netlify/
-│   └─ edge-functions/dns.ts
-├─ public/
-│   ├─ index.html
-│   └─ ui/index.html
-├─ vercel/
-│   ├─ app/
-│   │   ├─ route.ts
-│   │   ├─ dns-query/route.ts
-│   │   ├─ [token]/route.ts
-│   │   ├─ resolve/route.ts
-│   │   └─ ui/page.tsx
-│   ├─ package.json
-│   ├─ next.config.js
-│   └─ public/favicon.png
-```
-
-------
-
-## 🔧 调试建议
-
-- 检查浏览器控制台请求日志（Network → /resolve 或 /dns-query）
-- 确认请求中 `content-type` 为 `application/dns-message`
-- 若上游返回 502：
-  - 检查 `DOH` 环境变量
-  - 测试 Cloudflare 与 Google 模式是否正常
-
-------
-
-## 🏁 License
-
-MIT © HongShi — 2025
- 基于 Edge Runtime & Next.js 14 构建
- 专为高速、安全、免配置的 DoH 部署方案设计。
